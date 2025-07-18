@@ -48,7 +48,7 @@
     </script>
     <style>
         .gradient-bg {
-             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+             background: linear-gradient(135deg, #000310 0%, #020004 100%);
         }
         .glass {
             background: rgba(255, 255, 255, 0.1);
@@ -68,9 +68,9 @@
     <div class="container mx-auto px-4 py-6">
         <div class="text-center mb-8">
             <h1 class="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                🔗 Bracket Validator
+                🪄 Bracket Validator
             </h1>
-          
+                  
         </div>
 
         <!-- Main Content -->
@@ -91,7 +91,10 @@
                     </div>
                     <div class="flex flex-wrap gap-3 mb-4">
                         <button id="validateBtn" onclick="startValidation()" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                            🚀 Validate & Visualize
+                            🚀 Start
+                        </button>
+                        <button id="pauseResumeBtn" onclick="togglePauseResume()" class="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg hidden">
+                            ⏸️ Pause
                         </button>
                         <button onclick="stopValidation()" class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg">
                             ⏹️ Stop
@@ -149,8 +152,8 @@
                             <div id="stackEmpty" class="text-gray-500 text-center py-8">Stack is Empty</div>
                         </div>
                         <div class="mt-4 text-center">
-                            <div class="text-sm text-gray-400">Stack Size: <span id="stackSize" class="text-blue-400 font-bold">0</span></div>
-                            <div class="text-xs text-gray-500 mt-1">LIFO - Last In, First Out</div>
+                            <div class="text-sm text-blue-400">Stack Size: <span id="stackSize" class="text-blue-400 font-bold">0</span></div>
+                            <div class="text-xs text-blue-500 mt-1">LIFO - Last In, First Out</div>
                         </div>
                     </div>
                 </div>
@@ -199,14 +202,14 @@
                     <div class="space-y-3 text-gray-300">
                         <div class="flex"><span class="text-yellow-400 font-bold mr-3">1.</span> Initialize an empty stack</div>
                         <div class="flex"><span class="text-yellow-400 font-bold mr-3">2.</span> Iterate through each character in the input string</div>
-                        <div class="flex"><span class="text-yellow-400 font-bold mr-3">3.</span> If character is an opening bracket (, [, or {: <span class="text-green-400 font-bold">PUSH</span> it onto the stack</div>
+                        <div class="flex"><span class="text-yellow-400 font-bold mr-3">3.</span> If character is an opening bracket (, [, or {: <span class="text-green-400 font-bold"> PUSH </span> it onto the stack</div>
                         <div class="flex"><span class="text-yellow-400 font-bold mr-3">4.</span> If character is a closing bracket ), ], or }:</div>
                         <div class="ml-8 space-y-2">
-                            <div class="flex items-center"><span class="text-orange-400 mr-2">•</span> If stack is empty: <span class="text-red-400 font-bold">INVALID</span> (no matching opening bracket)</div>
-                            <div class="flex items-center"><span class="text-orange-400 mr-2">•</span> If top of stack matches the closing bracket: <span class="text-blue-400 font-bold"> POP</span> from stack</div>
-                            <div class="flex items-center"><span class="text-orange-400 mr-2">•</span> If top doesn't match: <span class="text-red-400 font-bold">INVALID</span> (mismatched brackets)</div>
+                            <div class="flex items-center"><span class="text-orange-400 mr-2">•</span> If stack is empty: <span class="text-red-400 font-bold"> INVALID </span> (no matching opening bracket)</div>
+                            <div class="flex items-center"><span class="text-orange-400 mr-2">•</span> If top of stack matches the closing bracket: <span class="text-blue-400 font-bold"> POP </span> from stack</div>
+                            <div class="flex items-center"><span class="text-orange-400 mr-2">•</span> If top doesn't match: <span class="text-red-400 font-bold"> INVALID </span> (mismatched brackets)</div>
                         </div>
-                        <div class="flex"><span class="text-yellow-400 font-bold mr-3">5.</span> After processing all characters: if stack is empty, sequence is <span class="text-green-400 font-bold"> VALID</span></div>
+                        <div class="flex"><span class="text-yellow-400 font-bold mr-3">5.</span> After processing all characters: if stack is empty, sequence is <span class="text-green-400 font-bold"> VALID </span></div>
                     </div>
                 </div>
 
@@ -230,12 +233,14 @@
     </div>
 
     <script>
-
         let stack = [];
         let isValidating = false;
+        let isPaused = false;
         let validationTimeout = null;
         let operationCount = 0;
         let startTime = 0;
+        let pauseStartTime = 0;
+        let totalPausedTime = 0;
         
         // Config
         const bracketPairs = {
@@ -311,6 +316,8 @@
         function resetVisualization() {
             stack = [];
             operationCount = 0;
+            isPaused = false;
+            totalPausedTime = 0;
             updateStackDisplay();
             updateProgressBar(0, 0);
             document.getElementById('expressionDisplay').innerHTML = '<div class="text-gray-400">Expression will appear here with highlighting...</div>';
@@ -321,6 +328,7 @@
             document.getElementById('finalResult').className = 'text-xl font-bold text-gray-400';
             document.getElementById('resultIcon').textContent = '❓';
             document.getElementById('detailedResult').classList.add('hidden');
+            document.getElementById('pauseResumeBtn').classList.add('hidden');
         }
 
         function updateStackDisplay() {
@@ -385,13 +393,49 @@
             container.innerHTML = html;
         }
 
+        function togglePauseResume() {
+            if (isPaused) {
+                resumeValidation();
+            } else {
+                pauseValidation();
+            }
+        }
+
+        function pauseValidation() {
+            if (!isValidating || isPaused) return;
+            
+            isPaused = true;
+            pauseStartTime = performance.now();
+            
+            const pauseBtn = document.getElementById('pauseResumeBtn');
+            pauseBtn.innerHTML = '▶️ Resume';
+            pauseBtn.className = 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg';
+            
+            document.getElementById('currentStep').textContent = '⏸️ Validation Paused - Click Resume to continue';
+        }
+
+        function resumeValidation() {
+            if (!isPaused) return;
+            
+            isPaused = false;
+            totalPausedTime += performance.now() - pauseStartTime;
+            
+            const pauseBtn = document.getElementById('pauseResumeBtn');
+            pauseBtn.innerHTML = '⏸️ Pause';
+            pauseBtn.className = 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg';
+            
+            document.getElementById('currentStep').textContent = '▶️ Validation Resumed';
+        }
+
         function stopValidation() {
             isValidating = false;
+            isPaused = false;
             if (validationTimeout) {
                 clearTimeout(validationTimeout);
                 validationTimeout = null;
             }
             document.getElementById('validateBtn').disabled = false;
+            document.getElementById('pauseResumeBtn').classList.add('hidden');
             document.getElementById('currentStep').textContent = 'Validation stopped';
         }
 
@@ -409,10 +453,17 @@
             }
             
             isValidating = true;
+            isPaused = false;
+            totalPausedTime = 0;
             document.getElementById('validateBtn').disabled = true;
+            document.getElementById('pauseResumeBtn').classList.remove('hidden');
+            document.getElementById('pauseResumeBtn').innerHTML = '⏸️ Pause';
+            document.getElementById('pauseResumeBtn').className = 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg';
+            
             startTime = performance.now();
             operationCount = 0;
             resetVisualization();
+            document.getElementById('pauseResumeBtn').classList.remove('hidden');
             
             try {
                 await visualizeValidation(expression);
@@ -421,7 +472,9 @@
                 document.getElementById('currentStep').textContent = 'Error during validation';
             } finally {
                 isValidating = false;
+                isPaused = false;
                 document.getElementById('validateBtn').disabled = false;
+                document.getElementById('pauseResumeBtn').classList.add('hidden');
             }
         }
 
@@ -445,7 +498,7 @@
                 document.getElementById('currentStep').textContent = `Processing: "${char}" (Step ${i + 1}/${brackets.length})`;
                 updateProgressBar(i, brackets.length);
                 
-                // Wait for animation with cancellation check
+                // Wait for animation with pause/cancellation check
                 await sleep(delay);
                 if (!isValidating) return;
 
@@ -493,7 +546,8 @@
 
         function showResults(expression, isValid, errorMessage, errorIndex) {
             const endTime = performance.now();
-            const processingTime = ((endTime - startTime) / 1000).toFixed(3);
+            const actualProcessingTime = (endTime - startTime - totalPausedTime) / 1000;
+            const processingTime = actualProcessingTime.toFixed(3);
             
             displayExpression(expression, errorIndex, isValid ? '' : 'error');
             updateProgressBar(1, 1);
@@ -544,7 +598,22 @@
 
         function sleep(ms) {
             return new Promise(resolve => {
-                validationTimeout = setTimeout(resolve, ms);
+                const checkPause = () => {
+                    if (!isValidating) {
+                        resolve();
+                        return;
+                    }
+                    
+                    if (isPaused) {
+                        // Check every 100ms if still paused
+                        validationTimeout = setTimeout(checkPause, 100);
+                    } else {
+                        // Resume with remaining delay
+                        validationTimeout = setTimeout(resolve, ms);
+                    }
+                };
+                
+                checkPause();
             });
         }
 
